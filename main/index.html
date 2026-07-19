@@ -4,8 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AmplifySpot - Main</title>
+    
+    <!-- Firebase SDK (Untuk Cek Perlindungan Halaman) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCh2E0vwYvutYSrdFLSH2YRyucJyuF4hIo",
+            authDomain: "amplifyspot-7c61d.firebaseapp.com",
+            projectId: "amplifyspot-7c61d",
+            storageBucket: "amplifyspot-7c61d.firebasestorage.app",
+            messagingSenderId: "698969608189",
+            appId: "1:698969608189:web:e5f353e4367b1fc84a5394",
+            measurementId: "G-XWCDE06385"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        // JIKA BELUM LOGIN, PAKSA KEMBALI KE INDEX.HTML
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.replace("index.html"); 
+            }
+        });
+    </script>
+
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap');
         
