@@ -145,13 +145,12 @@
             margin-top: -20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             border: 4px solid #121212;
-            transition: 0.3s;
+            transition: 0.2s;
             position: relative;
-            z-index: 105; /* Dipastikan paling atas */
+            z-index: 105;
         }
-        .nav-add-btn:hover { transform: scale(1.05); background: #1ed760; }
-        
-        /* Modifikasi SVG agar klik tembus ke tombol utama */
+        /* Tambahan efek saat layar HP ditekan agar terasa responsif */
+        .nav-add-btn:active { transform: scale(0.9); background: #1ed760; }
         .nav-add-btn svg { fill: #000; width: 20px; height: 20px; pointer-events: none; }
 
         /* UPLOAD MODAL */
@@ -229,7 +228,7 @@
         <div class="section-title">Global Tracks</div>
         <div id="songList">
             <!-- Teks default yang akan langsung tertimpa oleh sistem -->
-            <div style="text-align:center; color:#b3b3b3; margin-top:20px;">No song</div>
+            <div style="text-align:center; color:#b3b3b3; margin-top:20px;">Memuat data...</div>
         </div>
     </div>
 
@@ -240,23 +239,23 @@
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
-        <div class="nav-item active" id="homeBtn">
+        <div class="nav-item active" onclick="window.scrollTo(0,0)">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3l10 9h-3v9h-14v-9h-3l10-9zm0 2.83l-7 6.3v7.87h14v-7.87l-7-6.3z"/></svg>
             Main
         </div>
-        <div class="nav-item" id="profileBtn">
+        <div class="nav-item" onclick="window.location.href='/profile'">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 12c4.42 0 8 3.58 8 8h-16c0-4.42 3.58-8 8-8z"/></svg>
             Profile
         </div>
         
-        <!-- TOMBOL [+] MENGGUNAKAN ID, TANPA ONCLICK -->
-        <div class="nav-item" id="openUploadBtn" style="cursor: pointer;">
+        <!-- TOMBOL [+] MENGGUNAKAN FUNGSI JS GLOBAL YANG ANTI-ERROR -->
+        <div class="nav-item" onclick="bukaModalTugas()" style="cursor: pointer;">
             <div class="nav-add-btn">
                 <svg viewBox="0 0 24 24"><path d="M19 11h-6v-6h-2v6h-6v2h6v6h2v-6h6v-2z"/></svg>
             </div>
         </div>
         
-        <div class="nav-item" id="playlistBtn">
+        <div class="nav-item" onclick="window.location.href='/playlist'">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg>
             Playlist
         </div>
@@ -265,8 +264,7 @@
     <!-- Upload Modal -->
     <div class="modal" id="uploadModal">
         <div class="modal-content">
-            <!-- TOMBOL CLOSE MENGGUNAKAN ID -->
-            <div class="close-modal" id="closeUploadBtn">&times;</div>
+            <div class="close-modal" onclick="tutupModalTugas()">&times;</div>
             <h3>Upload to AmplifySpot</h3>
             
             <div class="form-group">
@@ -280,63 +278,62 @@
                 <input type="file" id="mp3File" class="file-input" accept=".mp3,audio/mpeg" required>
             </div>
             
-            <button class="upload-btn" id="uploadBtn">Upload</button>
+            <button class="upload-btn" id="uploadBtn" onclick="jalankanUpload()">Upload</button>
             <div id="uploadStatus"></div>
         </div>
     </div>
 
     <script>
-        // INISIALISASI SUPABASE
-        const SUPABASE_URL = 'https://vnuyqnandbsuibnbbbcg.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_kV3A57UcwSynM2GufS_x4g_bsL4n--d';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let allSongs = [];
-
-        // ===== EVENT LISTENERS UNTUK TOMBOL NAVIGASI & MODAL =====
-        
-        // Buka Modal Upload
-        document.getElementById('openUploadBtn').addEventListener('click', function() {
+        // 1. DAFTARKAN FUNGSI UI PALING PERTAMA AGAR SELALU BISA DIPENCET
+        window.bukaModalTugas = function() {
             document.getElementById('uploadModal').classList.add('show');
-        });
-
-        // Tutup Modal Upload
-        document.getElementById('closeUploadBtn').addEventListener('click', function() {
+        };
+        
+        window.tutupModalTugas = function() {
             document.getElementById('uploadModal').classList.remove('show');
             document.getElementById('uploadStatus').innerText = '';
-        });
+        };
 
-        // Tombol Navigasi Lainnya
-        document.getElementById('homeBtn').addEventListener('click', function() { window.scrollTo(0,0); });
-        document.getElementById('profileBtn').addEventListener('click', function() { window.location.href='/profile'; });
-        document.getElementById('playlistBtn').addEventListener('click', function() { window.location.href='/playlist'; });
+        window.playSong = function(url) {
+            if(url === '#') { alert("URL lagu tidak ditemukan di database."); return; }
+            const playerDiv = document.getElementById('globalPlayer');
+            const audio = document.getElementById('audioElement');
+            playerDiv.classList.add('active');
+            audio.src = url;
+            audio.play();
+        };
 
-        // Tombol Upload Data
-        document.getElementById('uploadBtn').addEventListener('click', uploadSong);
+        window.downloadSong = function(url) {
+            if(url === '#') return alert("File tidak tersedia.");
+            window.open(url, '_blank');
+        };
 
+        window.toggleFav = function(btn) {
+            btn.style.color = btn.style.color === 'rgb(29, 185, 84)' ? '#b3b3b3' : '#1db954';
+        };
 
-        // ===== FUNGSI DATA & RENDER =====
+        window.addToPlaylist = function() {
+            alert('Fitur tambah ke playlist akan tersedia di halaman /playlist!');
+        };
 
-        // FETCH SONGS DARI DATABASE
-        async function fetchSongs() {
-            const list = document.getElementById('songList');
+        // 2. INISIALISASI SUPABASE DENGAN SISTEM PENGAMAN (TRY-CATCH)
+        let clientSupabase = null;
+        let allSongs = [];
+
+        try {
+            const SUPABASE_URL = 'https://vnuyqnandbsuibnbbbcg.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_kV3A57UcwSynM2GufS_x4g_bsL4n--d';
             
-            try {
-                const { data, error } = await supabase.from('songs').select('*').order('id', { ascending: false });
-                
-                if (error) {
-                    throw error;
-                }
-                
-                allSongs = data || [];
-                renderSongs(allSongs);
-            } catch (err) {
-                console.error("Fetch error:", err);
-                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
+            if (window.supabase) {
+                clientSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } else {
+                console.warn("Library Supabase belum termuat di HP ini.");
             }
+        } catch (errorInit) {
+            console.error("Gagal memulai Supabase:", errorInit);
         }
 
-        // RENDER UI LAGU
+        // 3. FUNGSI RENDER & TAMPILKAN LAGU
         window.renderSongs = function(songs) {
             const list = document.getElementById('songList');
             list.innerHTML = '';
@@ -374,7 +371,31 @@
             });
         };
 
-        // FITUR PENCARIAN
+        // 4. FUNGSI AMBIL DATA (FETCH)
+        window.fetchSongs = async function() {
+            const list = document.getElementById('songList');
+            
+            if (!clientSupabase) {
+                list.innerHTML = `<div style="text-align:center; color:#ff4d4d; margin-top:20px; font-weight: 600;">Gagal koneksi ke Database.</div>`;
+                return;
+            }
+
+            try {
+                const { data, error } = await clientSupabase.from('songs').select('*').order('id', { ascending: false });
+                if (error) throw error;
+                
+                allSongs = data || [];
+                renderSongs(allSongs);
+            } catch (err) {
+                console.error("Fetch error:", err);
+                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
+            }
+        };
+
+        // Panggil fetch lagu saat script berjalan
+        fetchSongs();
+
+        // 5. FITUR PENCARIAN
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
             const filtered = allSongs.filter(song => 
@@ -384,14 +405,20 @@
             renderSongs(filtered);
         });
 
-        // UPLOAD LOGIC
-        async function uploadSong() {
+        // 6. FUNGSI UPLOAD DATA
+        window.jalankanUpload = async function() {
             const title = document.getElementById('songName').value.trim();
             const artist = document.getElementById('authorName').value.trim();
             const mp3Input = document.getElementById('mp3File');
             const mp3File = mp3Input.files[0];
             const status = document.getElementById('uploadStatus');
             const uploadBtn = document.getElementById('uploadBtn');
+
+            if(!clientSupabase) {
+                status.style.color = '#ff4d4d';
+                status.innerText = 'Database belum siap. Coba refresh halaman.';
+                return;
+            }
 
             if(!title || !artist || !mp3File) {
                 status.style.color = '#ff4d4d';
@@ -408,13 +435,12 @@
                 const cleanFileName = mp3File.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
                 const mp3Name = `${Date.now()}_${cleanFileName}`;
 
-                const { data: mp3Data, error: mp3Error } = await supabase.storage.from('music').upload(mp3Name, mp3File);
-                
+                const { data: mp3Data, error: mp3Error } = await clientSupabase.storage.from('music').upload(mp3Name, mp3File);
                 if(mp3Error) throw new Error("Gagal upload MP3: " + mp3Error.message);
                 
-                const mp3Url = supabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
+                const mp3Url = clientSupabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
 
-                const { error: dbError } = await supabase.from('songs').insert([
+                const { error: dbError } = await clientSupabase.from('songs').insert([
                     { title: title, artist: artist, file_url: mp3Url }
                 ]);
 
@@ -429,7 +455,7 @@
                     document.getElementById('mp3File').value = '';
                     uploadBtn.innerText = 'Upload';
                     uploadBtn.disabled = false;
-                    document.getElementById('uploadModal').classList.remove('show');
+                    tutupModalTugas();
                     fetchSongs(); 
                 }, 1500);
 
@@ -440,37 +466,7 @@
                 uploadBtn.innerText = 'Upload';
                 uploadBtn.disabled = false;
             }
-        }
-
-        // PLAYER ACTIONS
-        window.playSong = function(url) {
-            if(url === '#') {
-                alert("URL lagu tidak ditemukan di database.");
-                return;
-            }
-            const playerDiv = document.getElementById('globalPlayer');
-            const audio = document.getElementById('audioElement');
-            playerDiv.classList.add('active');
-            audio.src = url;
-            audio.play();
         };
-
-        window.downloadSong = function(url) {
-            if(url === '#') return alert("File tidak tersedia.");
-            window.open(url, '_blank');
-        };
-
-        window.toggleFav = function(btn) {
-            btn.style.color = btn.style.color === 'rgb(29, 185, 84)' ? '#b3b3b3' : '#1db954';
-        };
-
-        window.addToPlaylist = function() {
-            alert('Fitur tambah ke playlist akan tersedia di halaman /playlist!');
-        };
-
-        // Jalankan fetch saat script di-load
-        fetchSongs();
-
     </script>
 </body>
 </html>
