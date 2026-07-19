@@ -195,6 +195,7 @@
             cursor: pointer; margin-top: 10px; transition: 0.2s;
         }
         .upload-btn:hover { background: #1ed760; }
+        .upload-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
         #uploadStatus { text-align: center; margin-top: 10px; font-size: 13px; line-height: 1.4; }
 
         /* GLOBAL AUDIO PLAYER (Hidden until played) */
@@ -223,7 +224,8 @@
     <div class="content">
         <div class="section-title">Global Tracks</div>
         <div id="songList">
-            <div style="text-align:center; color:#b3b3b3; margin-top:20px;">Memuat lagu...</div>
+            <!-- Teks default yang akan langsung tertimpa oleh sistem -->
+            <div style="text-align:center; color:#b3b3b3; margin-top:20px;">No song</div>
         </div>
     </div>
 
@@ -270,7 +272,7 @@
                 <input type="file" id="mp3File" class="file-input" accept=".mp3,audio/mpeg" required>
             </div>
             
-            <button class="upload-btn" onclick="uploadSong()">Upload</button>
+            <button class="upload-btn" id="uploadBtn" onclick="uploadSong()">Upload</button>
             <div id="uploadStatus"></div>
         </div>
     </div>
@@ -286,20 +288,29 @@
         // MODAL LOGIC
         const modal = document.getElementById('uploadModal');
         function openModal() { modal.classList.add('show'); }
-        function closeModal() { modal.classList.remove('show'); document.getElementById('uploadStatus').innerText = ''; }
+        function closeModal() { 
+            modal.classList.remove('show'); 
+            document.getElementById('uploadStatus').innerText = ''; 
+        }
 
         // FETCH SONGS DARI DATABASE
         async function fetchSongs() {
             const list = document.getElementById('songList');
-            const { data, error } = await supabase.from('songs').select('*').order('id', { ascending: false });
             
-            if (error) {
-                list.innerHTML = `<div style="text-align:center; color:#ff4d4d;">Gagal memuat lagu. Cek Console atau pastikan RLS tabel dimatikan.</div>`;
-                return;
+            try {
+                const { data, error } = await supabase.from('songs').select('*').order('id', { ascending: false });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                allSongs = data || [];
+                renderSongs(allSongs);
+            } catch (err) {
+                console.error("Fetch error:", err);
+                // Jika error atau gagal load, tampilkan No song
+                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
             }
-            
-            allSongs = data || [];
-            renderSongs(allSongs);
         }
 
         // RENDER UI LAGU
@@ -307,8 +318,9 @@
             const list = document.getElementById('songList');
             list.innerHTML = '';
 
-            if(songs.length === 0) {
-                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px;">Belum ada lagu. Yuk upload!</div>`;
+            // Jika benar-benar kosong, munculkan No song
+            if(!songs || songs.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
                 return;
             }
 
@@ -356,11 +368,12 @@
 
         // UPLOAD LOGIC
         async function uploadSong() {
-            const title = document.getElementById('songName').value;
-            const artist = document.getElementById('authorName').value;
+            const title = document.getElementById('songName').value.trim();
+            const artist = document.getElementById('authorName').value.trim();
             const mp3Input = document.getElementById('mp3File');
             const mp3File = mp3Input.files[0];
             const status = document.getElementById('uploadStatus');
+            const uploadBtn = document.getElementById('uploadBtn');
 
             if(!title || !artist || !mp3File) {
                 status.style.color = '#ff4d4d';
@@ -368,8 +381,11 @@
                 return;
             }
 
+            // Ubah tombol jadi mode loading agar tidak di-klik 2 kali
+            uploadBtn.innerText = 'Uploading...';
+            uploadBtn.disabled = true;
             status.style.color = '#a0a0a0';
-            status.innerText = 'Mengupload file... Mohon tunggu.';
+            status.innerText = 'Mengupload file ke server...';
 
             try {
                 // 1. Bersihkan nama file dari spasi dan karakter aneh agar tidak ditolak server
@@ -405,6 +421,8 @@
                     document.getElementById('songName').value = '';
                     document.getElementById('authorName').value = '';
                     document.getElementById('mp3File').value = '';
+                    uploadBtn.innerText = 'Upload'; // Kembalikan teks tombol
+                    uploadBtn.disabled = false; // Aktifkan tombol lagi
                     closeModal();
                     fetchSongs(); // Refresh list global
                 }, 1500);
@@ -413,6 +431,10 @@
                 console.error("Upload Error Detail:", err);
                 status.style.color = '#ff4d4d';
                 status.innerText = err.message || 'Terjadi kesalahan saat upload.';
+                
+                // Kembalikan tombol jika error
+                uploadBtn.innerText = 'Upload';
+                uploadBtn.disabled = false;
             }
         }
 
@@ -442,8 +464,8 @@
             alert('Fitur tambah ke playlist akan tersedia di halaman /playlist!');
         }
 
-        // Jalankan fetch saat halaman dibuka
-        window.onload = fetchSongs;
+        // Jalankan fetch secara instan tanpa menunggu window.onload
+        fetchSongs();
 
     </script>
 </body>
