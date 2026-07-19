@@ -157,7 +157,8 @@
 <!-- Firebase SDK Modular -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    // Menambahkan onAuthStateChanged ke import
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     // Konfigurasi AmplifySpot
     const firebaseConfig = {
@@ -172,6 +173,13 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+
+    // CEK SESI LOGIN: Jika user sudah login, paksa pindah ke /main
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            window.location.replace("/main"); 
+        }
+    });
 
     // State untuk menentukan apakah sedang di mode Login atau Register
     let isLoginMode = true;
@@ -224,9 +232,7 @@
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     showMessage("Login Berhasil! Mengalihkan...", "#1db954");
-                    setTimeout(() => {
-                        window.location.href = "/main"; // Redirect ke /main
-                    }, 1000);
+                    // Redirect otomatis akan ditangani oleh onAuthStateChanged di atas
                 })
                 .catch((error) => {
                     showMessage(translateFirebaseError(error.code), "#ff4d4d");
@@ -250,9 +256,7 @@
                         displayName: username
                     }).then(() => {
                         showMessage("Register Berhasil! Mengalihkan...", "#1db954");
-                        setTimeout(() => {
-                            window.location.href = "/main"; // Redirect ke /main
-                        }, 1000);
+                        // Redirect otomatis akan ditangani oleh onAuthStateChanged di atas
                     });
                 })
                 .catch((error) => {
