@@ -1,1 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <!-- Mematikan fitur zoom in/out di perangkat mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AmplifySpot - Login</title>
+    <style>
+        /* Import Font Modern (Inter) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Inter', sans-serif; 
+        }
+        
+        body { 
+            background-color: #121212; 
+            color: #ffffff; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Mencegah scroll berlebih */
+        }
+        
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            background: #181818;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+            margin: 20px;
+        }
+        
+        .logo {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 35px;
+            color: #ffffff;
+            letter-spacing: -1px;
+        }
+        
+        .logo span {
+            color: #1db954; /* Warna hijau premium ala aplikasi musik */
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 16px;
+            background: #242424;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        .input-group input:focus {
+            border-color: #1db954;
+            background: #2a2a2a;
+            box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+        }
+        
+        .input-group input::placeholder {
+            color: #a0a0a0;
+        }
+        
+        button.submit-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 40px;
+            border: none;
+            background-color: #1db954;
+            color: #000;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-top: 10px;
+        }
+        
+        button.submit-btn:hover {
+            background-color: #1ed760;
+            transform: scale(1.02);
+        }
+        
+        .toggle-text {
+            text-align: center;
+            margin-top: 25px;
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+        
+        .toggle-text a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .toggle-text a:hover {
+            color: #1db954;
+        }
+        
+        .message {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 20px;
+            font-weight: 600;
+        }
+        
+        /* Default sembunyikan username (karena defaultnya mode Login) */
+        #usernameGroup {
+            display: none;
+        }
+    </style>
+</head>
+<body>
 
+<div class="auth-container">
+    <div class="logo">Amplify<span>Spot</span></div>
+    
+    <div class="input-group" id="usernameGroup">
+        <input type="text" id="username" placeholder="Username">
+    </div>
+    <div class="input-group">
+        <input type="email" id="email" placeholder="Email Address" required>
+    </div>
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password" required>
+    </div>
+
+    <button class="submit-btn" id="actionBtn">Log In</button>
+
+    <div class="message" id="message"></div>
+
+    <div class="toggle-text">
+        <span id="toggleText">Belum punya akun?</span> 
+        <a id="toggleLink">Register di sini</a>
+    </div>
+</div>
+
+<!-- Firebase SDK Modular -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Konfigurasi AmplifySpot
+    const firebaseConfig = {
+        apiKey: "AIzaSyCh2E0vwYvutYSrdFLSH2YRyucJyuF4hIo",
+        authDomain: "amplifyspot-7c61d.firebaseapp.com",
+        projectId: "amplifyspot-7c61d",
+        storageBucket: "amplifyspot-7c61d.firebasestorage.app",
+        messagingSenderId: "698969608189",
+        appId: "1:698969608189:web:e5f353e4367b1fc84a5394",
+        measurementId: "G-XWCDE06385"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // State untuk menentukan apakah sedang di mode Login atau Register
+    let isLoginMode = true;
+
+    // Element DOM
+    const usernameGroup = document.getElementById('usernameGroup');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const actionBtn = document.getElementById('actionBtn');
+    const toggleText = document.getElementById('toggleText');
+    const toggleLink = document.getElementById('toggleLink');
+    const messageDiv = document.getElementById('message');
+
+    // Fungsi Toggle Login/Register
+    toggleLink.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        messageDiv.innerText = '';
+        
+        // Kosongkan input saat pindah mode
+        passwordInput.value = '';
+        
+        if (isLoginMode) {
+            usernameGroup.style.display = 'none';
+            actionBtn.innerText = 'Log In';
+            toggleText.innerText = 'Belum punya akun?';
+            toggleLink.innerText = 'Register di sini';
+        } else {
+            usernameGroup.style.display = 'block';
+            actionBtn.innerText = 'Register';
+            toggleText.innerText = 'Sudah punya akun?';
+            toggleLink.innerText = 'Log In di sini';
+        }
+    });
+
+    // Fungsi Submit (Login atau Register)
+    actionBtn.addEventListener('click', () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const username = usernameInput.value.trim();
+
+        if (!email || !password) {
+            showMessage("Email dan Password wajib diisi!", "#ff4d4d");
+            return;
+        }
+
+        if (isLoginMode) {
+            // Proses Login
+            showMessage("Memproses login...", "#a0a0a0");
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    showMessage("Login Berhasil! Mengalihkan...", "#1db954");
+                    setTimeout(() => {
+                        window.location.href = "/main"; // Redirect ke /main
+                    }, 1000);
+                })
+                .catch((error) => {
+                    showMessage(translateFirebaseError(error.code), "#ff4d4d");
+                });
+        } else {
+            // Proses Register
+            if (!username) {
+                showMessage("Username wajib diisi untuk mendaftar!", "#ff4d4d");
+                return;
+            }
+            if (password.length < 6) {
+                showMessage("Password minimal 6 karakter!", "#ff4d4d");
+                return;
+            }
+            
+            showMessage("Mendaftarkan akun...", "#a0a0a0");
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Simpan Username ke profil Firebase pengguna
+                    updateProfile(userCredential.user, {
+                        displayName: username
+                    }).then(() => {
+                        showMessage("Register Berhasil! Mengalihkan...", "#1db954");
+                        setTimeout(() => {
+                            window.location.href = "/main"; // Redirect ke /main
+                        }, 1000);
+                    });
+                })
+                .catch((error) => {
+                    showMessage(translateFirebaseError(error.code), "#ff4d4d");
+                });
+        }
+    });
+
+    // Fungsi untuk menampilkan pesan error/sukses
+    function showMessage(text, color) {
+        messageDiv.innerText = text;
+        messageDiv.style.color = color;
+    }
+
+    // Fungsi sederhana untuk menerjemahkan error Firebase agar lebih rapi
+    function translateFirebaseError(errorCode) {
+        switch (errorCode) {
+            case 'auth/invalid-email':
+                return 'Format email tidak valid.';
+            case 'auth/user-not-found':
+            case 'auth/invalid-credential':
+                return 'Email atau password salah.';
+            case 'auth/email-already-in-use':
+                return 'Email ini sudah terdaftar.';
+            case 'auth/weak-password':
+                return 'Password terlalu lemah (minimal 6 karakter).';
+            default:
+                return 'Terjadi kesalahan. Silakan coba lagi.';
+        }
+    }
+</script>
+</body>
+</html>
