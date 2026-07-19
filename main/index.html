@@ -146,9 +146,11 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             border: 4px solid #121212;
             transition: 0.3s;
+            position: relative;
+            z-index: 10;
         }
         .nav-add-btn:hover { transform: scale(1.05); background: #1ed760; }
-        .nav-add-btn svg { fill: #000; width: 20px; height: 20px; }
+        .nav-add-btn svg { fill: #000; width: 20px; height: 20px; pointer-events: none; }
 
         /* UPLOAD MODAL */
         .modal {
@@ -244,8 +246,9 @@
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 12c4.42 0 8 3.58 8 8h-16c0-4.42 3.58-8 8-8z"/></svg>
             Profile
         </div>
-        <div class="nav-item">
-            <div class="nav-add-btn" onclick="openModal()">
+        <!-- MEMPERLUAS AREA KLIK PADA TOMBOL [+] -->
+        <div class="nav-item" onclick="openModal()" style="cursor: pointer;">
+            <div class="nav-add-btn">
                 <svg viewBox="0 0 24 24"><path d="M19 11h-6v-6h-2v6h-6v2h6v6h2v-6h6v-2z"/></svg>
             </div>
         </div>
@@ -285,16 +288,18 @@
 
         let allSongs = [];
 
-        // MODAL LOGIC
-        const modal = document.getElementById('uploadModal');
-        function openModal() { modal.classList.add('show'); }
-        function closeModal() { 
-            modal.classList.remove('show'); 
+        // MODAL LOGIC - dipaksa masuk ke global scope window agar pasti jalan
+        window.openModal = function() { 
+            document.getElementById('uploadModal').classList.add('show'); 
+        };
+        
+        window.closeModal = function() { 
+            document.getElementById('uploadModal').classList.remove('show'); 
             document.getElementById('uploadStatus').innerText = ''; 
-        }
+        };
 
         // FETCH SONGS DARI DATABASE
-        async function fetchSongs() {
+        window.fetchSongs = async function() {
             const list = document.getElementById('songList');
             
             try {
@@ -311,10 +316,10 @@
                 // Jika error atau gagal load, tampilkan No song
                 list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
             }
-        }
+        };
 
         // RENDER UI LAGU
-        function renderSongs(songs) {
+        window.renderSongs = function(songs) {
             const list = document.getElementById('songList');
             list.innerHTML = '';
 
@@ -354,7 +359,7 @@
                 `;
                 list.innerHTML += html;
             });
-        }
+        };
 
         // FITUR PENCARIAN
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -367,7 +372,7 @@
         });
 
         // UPLOAD LOGIC
-        async function uploadSong() {
+        window.uploadSong = async function() {
             const title = document.getElementById('songName').value.trim();
             const artist = document.getElementById('authorName').value.trim();
             const mp3Input = document.getElementById('mp3File');
@@ -436,10 +441,10 @@
                 uploadBtn.innerText = 'Upload';
                 uploadBtn.disabled = false;
             }
-        }
+        };
 
         // PLAYER ACTIONS
-        function playSong(url) {
+        window.playSong = function(url) {
             if(url === '#') {
                 alert("URL lagu tidak ditemukan di database.");
                 return;
@@ -449,20 +454,20 @@
             playerDiv.classList.add('active');
             audio.src = url;
             audio.play();
-        }
+        };
 
-        function downloadSong(url) {
+        window.downloadSong = function(url) {
             if(url === '#') return alert("File tidak tersedia.");
             window.open(url, '_blank');
-        }
+        };
 
-        function toggleFav(btn) {
+        window.toggleFav = function(btn) {
             btn.style.color = btn.style.color === 'rgb(29, 185, 84)' ? '#b3b3b3' : '#1db954';
-        }
+        };
 
-        function addToPlaylist() {
+        window.addToPlaylist = function() {
             alert('Fitur tambah ke playlist akan tersedia di halaman /playlist!');
-        }
+        };
 
         // Jalankan fetch secara instan tanpa menunggu window.onload
         fetchSongs();
