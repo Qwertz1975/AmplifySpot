@@ -61,12 +61,11 @@
             height: 50px;
             border-radius: 4px;
             background: #282828;
-            object-fit: cover;
-            margin-right: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #b3b3b3;
+            margin-right: 15px;
         }
         
         .song-info { flex: 1; overflow: hidden; }
@@ -242,10 +241,6 @@
                 <label>Upload File (Must MP3)</label>
                 <input type="file" id="mp3File" class="file-input" accept=".mp3,audio/mpeg" required>
             </div>
-            <div class="form-group">
-                <label>Upload Image (Optional)</label>
-                <input type="file" id="imageFile" class="file-input" accept="image/*">
-            </div>
             
             <button class="upload-btn" onclick="uploadSong()">Upload</button>
             <div id="uploadStatus"></div>
@@ -253,7 +248,7 @@
     </div>
 
     <script>
-        // INISIALISASI SUPABASE (Sesuai Kredensial Kamu)
+        // INISIALISASI SUPABASE
         const SUPABASE_URL = 'https://vnuyqnandbsuibnbbbcg.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_kV3A57UcwSynM2GufS_x4g_bsL4n--d';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -296,12 +291,10 @@
                 const addIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`;
                 const dlIcon = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`;
                 
-                // Jika tidak ada gambar cover, gunakan icon default musik
-                const coverHTML = song.cover_url 
-                    ? `<img src="${song.cover_url}" class="song-cover" alt="cover">` 
-                    : `<div class="song-cover"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg></div>`;
+                // Cover default
+                const coverHTML = `<div class="song-cover"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg></div>`;
 
-                // Handle file mp3 url (Fallback ke dummy jika URL kosong untuk test UI)
+                // Handle file mp3 url
                 const audioUrl = song.file_url || '#';
 
                 const html = `
@@ -338,7 +331,6 @@
             const title = document.getElementById('songName').value;
             const artist = document.getElementById('authorName').value;
             const mp3File = document.getElementById('mp3File').files[0];
-            const imageFile = document.getElementById('imageFile').files[0];
             const status = document.getElementById('uploadStatus');
 
             if(!title || !artist || !mp3File) {
@@ -352,7 +344,6 @@
 
             try {
                 let mp3Url = '';
-                let coverUrl = '';
 
                 // 1. Upload MP3 ke bucket 'music'
                 const mp3Name = `${Date.now()}_${mp3File.name}`;
@@ -360,18 +351,9 @@
                 if(mp3Error) throw new Error("Gagal upload MP3. Pastikan bucket 'music' ada.");
                 mp3Url = supabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
 
-                // 2. Upload Image ke bucket 'covers' (Jika ada)
-                if(imageFile) {
-                    const imgName = `${Date.now()}_${imageFile.name}`;
-                    const { data: imgData, error: imgError } = await supabase.storage.from('covers').upload(imgName, imageFile);
-                    if(!imgError) {
-                        coverUrl = supabase.storage.from('covers').getPublicUrl(imgName).data.publicUrl;
-                    }
-                }
-
-                // 3. Simpan ke tabel 'songs'
+                // 2. Simpan ke tabel 'songs'
                 const { error: dbError } = await supabase.from('songs').insert([
-                    { title: title, artist: artist, file_url: mp3Url, cover_url: coverUrl }
+                    { title: title, artist: artist, file_url: mp3Url }
                 ]);
 
                 if(dbError) throw dbError;
@@ -384,7 +366,6 @@
                     document.getElementById('songName').value = '';
                     document.getElementById('authorName').value = '';
                     document.getElementById('mp3File').value = '';
-                    document.getElementById('imageFile').value = '';
                     closeModal();
                     fetchSongs(); // Refresh list global
                 }, 1500);
