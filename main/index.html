@@ -147,9 +147,11 @@
             border: 4px solid #121212;
             transition: 0.3s;
             position: relative;
-            z-index: 10;
+            z-index: 105; /* Dipastikan paling atas */
         }
         .nav-add-btn:hover { transform: scale(1.05); background: #1ed760; }
+        
+        /* Modifikasi SVG agar klik tembus ke tombol utama */
         .nav-add-btn svg { fill: #000; width: 20px; height: 20px; pointer-events: none; }
 
         /* UPLOAD MODAL */
@@ -173,7 +175,7 @@
             position: relative;
             border: 1px solid #282828;
         }
-        .close-modal { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #b3b3b3; cursor: pointer; }
+        .close-modal { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #b3b3b3; cursor: pointer; z-index: 210; }
         .modal-content h3 { margin-bottom: 20px; font-weight: 600; text-align: center; }
         
         .form-group { margin-bottom: 15px; }
@@ -238,21 +240,23 @@
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="window.scrollTo(0,0)">
+        <div class="nav-item active" id="homeBtn">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3l10 9h-3v9h-14v-9h-3l10-9zm0 2.83l-7 6.3v7.87h14v-7.87l-7-6.3z"/></svg>
             Main
         </div>
-        <div class="nav-item" onclick="window.location.href='/profile'">
+        <div class="nav-item" id="profileBtn">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 12c4.42 0 8 3.58 8 8h-16c0-4.42 3.58-8 8-8z"/></svg>
             Profile
         </div>
-        <!-- MEMPERLUAS AREA KLIK PADA TOMBOL [+] -->
-        <div class="nav-item" onclick="openModal()" style="cursor: pointer;">
+        
+        <!-- TOMBOL [+] MENGGUNAKAN ID, TANPA ONCLICK -->
+        <div class="nav-item" id="openUploadBtn" style="cursor: pointer;">
             <div class="nav-add-btn">
                 <svg viewBox="0 0 24 24"><path d="M19 11h-6v-6h-2v6h-6v2h6v6h2v-6h6v-2z"/></svg>
             </div>
         </div>
-        <div class="nav-item" onclick="window.location.href='/playlist'">
+        
+        <div class="nav-item" id="playlistBtn">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg>
             Playlist
         </div>
@@ -261,7 +265,8 @@
     <!-- Upload Modal -->
     <div class="modal" id="uploadModal">
         <div class="modal-content">
-            <div class="close-modal" onclick="closeModal()">&times;</div>
+            <!-- TOMBOL CLOSE MENGGUNAKAN ID -->
+            <div class="close-modal" id="closeUploadBtn">&times;</div>
             <h3>Upload to AmplifySpot</h3>
             
             <div class="form-group">
@@ -275,7 +280,7 @@
                 <input type="file" id="mp3File" class="file-input" accept=".mp3,audio/mpeg" required>
             </div>
             
-            <button class="upload-btn" id="uploadBtn" onclick="uploadSong()">Upload</button>
+            <button class="upload-btn" id="uploadBtn">Upload</button>
             <div id="uploadStatus"></div>
         </div>
     </div>
@@ -288,18 +293,32 @@
 
         let allSongs = [];
 
-        // MODAL LOGIC - dipaksa masuk ke global scope window agar pasti jalan
-        window.openModal = function() { 
-            document.getElementById('uploadModal').classList.add('show'); 
-        };
+        // ===== EVENT LISTENERS UNTUK TOMBOL NAVIGASI & MODAL =====
         
-        window.closeModal = function() { 
-            document.getElementById('uploadModal').classList.remove('show'); 
-            document.getElementById('uploadStatus').innerText = ''; 
-        };
+        // Buka Modal Upload
+        document.getElementById('openUploadBtn').addEventListener('click', function() {
+            document.getElementById('uploadModal').classList.add('show');
+        });
+
+        // Tutup Modal Upload
+        document.getElementById('closeUploadBtn').addEventListener('click', function() {
+            document.getElementById('uploadModal').classList.remove('show');
+            document.getElementById('uploadStatus').innerText = '';
+        });
+
+        // Tombol Navigasi Lainnya
+        document.getElementById('homeBtn').addEventListener('click', function() { window.scrollTo(0,0); });
+        document.getElementById('profileBtn').addEventListener('click', function() { window.location.href='/profile'; });
+        document.getElementById('playlistBtn').addEventListener('click', function() { window.location.href='/playlist'; });
+
+        // Tombol Upload Data
+        document.getElementById('uploadBtn').addEventListener('click', uploadSong);
+
+
+        // ===== FUNGSI DATA & RENDER =====
 
         // FETCH SONGS DARI DATABASE
-        window.fetchSongs = async function() {
+        async function fetchSongs() {
             const list = document.getElementById('songList');
             
             try {
@@ -313,33 +332,27 @@
                 renderSongs(allSongs);
             } catch (err) {
                 console.error("Fetch error:", err);
-                // Jika error atau gagal load, tampilkan No song
                 list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
             }
-        };
+        }
 
         // RENDER UI LAGU
         window.renderSongs = function(songs) {
             const list = document.getElementById('songList');
             list.innerHTML = '';
 
-            // Jika benar-benar kosong, munculkan No song
             if(!songs || songs.length === 0) {
                 list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
                 return;
             }
 
             songs.forEach(song => {
-                // SVG Icons
                 const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
                 const favIcon = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
                 const addIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`;
                 const dlIcon = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`;
                 
-                // Cover default
                 const coverHTML = `<div class="song-cover"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg></div>`;
-
-                // Handle file mp3 url
                 const audioUrl = song.file_url || '#';
 
                 const html = `
@@ -372,7 +385,7 @@
         });
 
         // UPLOAD LOGIC
-        window.uploadSong = async function() {
+        async function uploadSong() {
             const title = document.getElementById('songName').value.trim();
             const artist = document.getElementById('authorName').value.trim();
             const mp3Input = document.getElementById('mp3File');
@@ -386,62 +399,48 @@
                 return;
             }
 
-            // Ubah tombol jadi mode loading agar tidak di-klik 2 kali
             uploadBtn.innerText = 'Uploading...';
             uploadBtn.disabled = true;
             status.style.color = '#a0a0a0';
             status.innerText = 'Mengupload file ke server...';
 
             try {
-                // 1. Bersihkan nama file dari spasi dan karakter aneh agar tidak ditolak server
                 const cleanFileName = mp3File.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
                 const mp3Name = `${Date.now()}_${cleanFileName}`;
 
-                // 2. Upload MP3 ke bucket 'music'
                 const { data: mp3Data, error: mp3Error } = await supabase.storage.from('music').upload(mp3Name, mp3File);
                 
-                if(mp3Error) {
-                    console.error("Storage Error:", mp3Error);
-                    throw new Error("Gagal upload MP3: " + mp3Error.message);
-                }
+                if(mp3Error) throw new Error("Gagal upload MP3: " + mp3Error.message);
                 
-                // Dapatkan link publik setelah sukses masuk Storage
                 const mp3Url = supabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
 
-                // 3. Simpan ke tabel 'songs' Database
                 const { error: dbError } = await supabase.from('songs').insert([
                     { title: title, artist: artist, file_url: mp3Url }
                 ]);
 
-                if(dbError) {
-                    console.error("Database Error:", dbError);
-                    throw new Error("Gagal simpan ke database: " + dbError.message);
-                }
+                if(dbError) throw new Error("Gagal simpan ke database: " + dbError.message);
 
                 status.style.color = '#1db954';
                 status.innerText = 'Upload berhasil!';
                 
-                // Reset form & tutup modal
                 setTimeout(() => {
                     document.getElementById('songName').value = '';
                     document.getElementById('authorName').value = '';
                     document.getElementById('mp3File').value = '';
-                    uploadBtn.innerText = 'Upload'; // Kembalikan teks tombol
-                    uploadBtn.disabled = false; // Aktifkan tombol lagi
-                    closeModal();
-                    fetchSongs(); // Refresh list global
+                    uploadBtn.innerText = 'Upload';
+                    uploadBtn.disabled = false;
+                    document.getElementById('uploadModal').classList.remove('show');
+                    fetchSongs(); 
                 }, 1500);
 
             } catch (err) {
                 console.error("Upload Error Detail:", err);
                 status.style.color = '#ff4d4d';
                 status.innerText = err.message || 'Terjadi kesalahan saat upload.';
-                
-                // Kembalikan tombol jika error
                 uploadBtn.innerText = 'Upload';
                 uploadBtn.disabled = false;
             }
-        };
+        }
 
         // PLAYER ACTIONS
         window.playSong = function(url) {
@@ -469,7 +468,7 @@
             alert('Fitur tambah ke playlist akan tersedia di halaman /playlist!');
         };
 
-        // Jalankan fetch secara instan tanpa menunggu window.onload
+        // Jalankan fetch saat script di-load
         fetchSongs();
 
     </script>
