@@ -22,16 +22,17 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         
-        // Cek login & Simpan data Owner
-        window.ownerEmail = "mehangg10@gmail.com"; // Email khusus Owner
+        window.ownerEmail = "mehangg10@gmail.com"; 
         window.currentUserEmail = null;
+        window.currentUserName = null;
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
                 window.location.replace("index.html"); 
             } else {
                 window.currentUserEmail = user.email;
-                // Render ulang lagu agar tombol edit muncul jika dia owner
+                window.currentUserName = user.displayName || "Unknown User";
+                
                 if(window.renderSongs && window.allSongs) {
                     window.renderSongs(window.allSongs);
                 }
@@ -49,7 +50,7 @@
         body { 
             background-color: #121212; 
             color: #ffffff; 
-            padding-bottom: 80px; /* Ruang untuk bottom nav */
+            padding-bottom: 80px; 
             overflow-x: hidden;
         }
 
@@ -65,166 +66,91 @@
         .logo span { color: #1db954; }
         
         .search-bar {
-            width: 100%;
-            background: #242424;
-            border-radius: 25px;
-            padding: 12px 20px;
-            border: 1px solid transparent;
-            color: white;
-            font-size: 15px;
-            outline: none;
-            transition: 0.3s;
+            width: 100%; background: #242424; border-radius: 25px; padding: 12px 20px;
+            border: 1px solid transparent; color: white; font-size: 15px; outline: none; transition: 0.3s;
         }
         .search-bar:focus { border-color: #1db954; background: #2a2a2a; }
 
-        /* SONG LIST */
+        /* SEARCH CATEGORIES */
+        .search-categories { display: flex; gap: 8px; margin-top: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .search-categories::-webkit-scrollbar { display: none; }
+        .cat-btn {
+            background: #242424; color: #b3b3b3; border: 1px solid transparent; white-space: nowrap;
+            padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .cat-btn.active { background: #1db954; color: black; }
+
+        /* LIST CONTENT */
         .content { padding: 0 20px; }
         .section-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; margin-top: 10px; }
         
-        .song-item {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.2s;
-            margin-bottom: 5px;
-        }
+        /* ITEM STYLES */
+        .song-item { display: flex; align-items: center; padding: 10px; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; }
         .song-item:hover { background: #282828; }
-        
-        .song-cover {
-            width: 50px;
-            height: 50px;
-            border-radius: 4px;
-            background: #282828;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #b3b3b3;
-            margin-right: 15px;
-        }
-        
+        .song-cover { width: 50px; height: 50px; border-radius: 4px; background: #282828; display: flex; align-items: center; justify-content: center; color: #b3b3b3; margin-right: 15px; }
         .song-info { flex: 1; overflow: hidden; }
         .song-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .song-author { font-size: 13px; color: #b3b3b3; margin-top: 3px; }
-        
         .song-actions { display: flex; gap: 12px; align-items: center; }
         .action-btn { background: none; border: none; color: #b3b3b3; cursor: pointer; transition: 0.2s; padding: 5px; }
         .action-btn:hover { color: #ffffff; transform: scale(1.1); }
         .play-btn { color: #1db954; }
-        .edit-btn { color: #ffae42; } /* Warna khusus tombol edit */
+        .edit-btn { color: #ffae42; }
+
+        /* PLAYLIST CARD IN SEARCH */
+        .playlist-card {
+            background: #181818; border: 1px solid #282828; border-radius: 10px;
+            padding: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .pl-info { flex: 1; }
+        .pl-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .pl-meta { font-size: 12px; color: #b3b3b3; display: flex; gap: 8px; align-items: center; }
+        .save-pl-btn { color: #1db954; background: none; border: none; cursor: pointer; padding: 5px; transition: 0.2s; }
+        .save-pl-btn:hover { transform: scale(1.1); color: #1ed760; }
+
+        /* MY PLAYLIST CARD (Untuk Modal Add) */
+        .my-pl-card { background: #242424; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
+        .my-pl-card:hover { background: #333; }
+        .my-pl-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .my-pl-count { font-size: 11px; color: #b3b3b3; }
 
         /* BOTTOM NAV BAR */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: rgba(24, 24, 24, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid #282828;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 10px 0;
-            z-index: 100;
+            position: fixed; bottom: 0; width: 100%; background: rgba(24, 24, 24, 0.95);
+            backdrop-filter: blur(10px); border-top: 1px solid #282828; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; z-index: 100;
         }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #b3b3b3;
-            text-decoration: none;
-            font-size: 11px;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 25%;
-        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #b3b3b3; text-decoration: none; font-size: 11px; cursor: pointer; transition: 0.2s; width: 25%; }
         .nav-item:hover, .nav-item.active { color: #ffffff; }
         .nav-icon { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
-        
         .nav-add-btn {
-            background: #1db954;
-            color: #000;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: -20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border: 4px solid #121212;
-            transition: 0.2s;
-            position: relative;
-            z-index: 105;
+            background: #1db954; color: #000; width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin-top: -20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 4px solid #121212; transition: 0.2s; position: relative; z-index: 105;
         }
         .nav-add-btn:active { transform: scale(0.9); background: #1ed760; }
         .nav-add-btn svg { fill: #000; width: 20px; height: 20px; pointer-events: none; }
 
-        /* MODAL GLOBAL */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 200;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+        /* MODALS */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
         .modal.show { display: flex; }
-        .modal-content {
-            background: #181818;
-            width: 100%;
-            max-width: 400px;
-            border-radius: 12px;
-            padding: 25px;
-            position: relative;
-            border: 1px solid #282828;
-        }
+        .modal-content { background: #181818; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; position: relative; border: 1px solid #282828; max-height: 80vh; overflow-y: auto; }
         .close-modal { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #b3b3b3; cursor: pointer; z-index: 210; }
         .modal-content h3 { margin-bottom: 20px; font-weight: 600; text-align: center; }
         
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 13px; color: #b3b3b3; margin-bottom: 5px; }
-        .form-input {
-            width: 100%; padding: 12px;
-            background: #242424; border: 1px solid transparent;
-            border-radius: 6px; color: white; outline: none;
-        }
+        .form-input { width: 100%; padding: 12px; background: #242424; border: 1px solid transparent; border-radius: 6px; color: white; outline: none; }
         .form-input:focus { border-color: #1db954; }
-        .file-input {
-            width: 100%; padding: 10px; background: #242424;
-            border-radius: 6px; color: #b3b3b3; font-size: 13px;
-        }
+        .file-input { width: 100%; padding: 10px; background: #242424; border-radius: 6px; color: #b3b3b3; font-size: 13px; }
         
-        .upload-btn {
-            width: 100%; padding: 14px;
-            background: #1db954; color: black;
-            border: none; border-radius: 25px;
-            font-weight: 600; font-size: 15px;
-            cursor: pointer; margin-top: 10px; transition: 0.2s;
-        }
+        .upload-btn { width: 100%; padding: 14px; background: #1db954; color: black; border: none; border-radius: 25px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .upload-btn:hover { background: #1ed760; }
-        .upload-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
-        
-        .delete-btn {
-            width: 100%; padding: 14px;
-            background: transparent; color: #ff4d4d;
-            border: 1px solid #ff4d4d; border-radius: 25px;
-            font-weight: 600; font-size: 15px;
-            cursor: pointer; margin-top: 10px; transition: 0.2s;
-        }
-        .delete-btn:hover { background: #ff4d4d; color: white; }
-        
+        .upload-btn:disabled { background: #555; cursor: not-allowed; }
+        .delete-btn { width: 100%; padding: 14px; background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; border-radius: 25px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; }
         .status-msg { text-align: center; margin-top: 10px; font-size: 13px; line-height: 1.4; }
 
         /* GLOBAL AUDIO PLAYER */
-        #globalPlayer {
-            position: fixed; bottom: 65px; left: 0; width: 100%;
-            background: #181818; padding: 10px 20px;
-            display: none; align-items: center;
-            border-top: 1px solid #282828; z-index: 99;
-        }
+        #globalPlayer { position: fixed; bottom: 65px; left: 0; width: 100%; background: #181818; padding: 10px 20px; display: none; align-items: center; border-top: 1px solid #282828; z-index: 99; }
         #globalPlayer.active { display: flex; }
         audio { width: 100%; height: 30px; outline: none; }
         audio::-webkit-media-controls-panel { background-color: #242424; }
@@ -236,11 +162,17 @@
 
     <div class="header">
         <div class="logo">Amplify<span>Spot</span></div>
-        <input type="text" id="searchInput" class="search-bar" placeholder="Cari lagu atau artis...">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Cari...">
+        
+        <div class="search-categories">
+            <button class="cat-btn active" id="cat-title" onclick="setSearchCategory('title')">Music Name</button>
+            <button class="cat-btn" id="cat-author" onclick="setSearchCategory('author')">Author</button>
+            <button class="cat-btn" id="cat-playlist" onclick="setSearchCategory('playlist')">Playlist</button>
+        </div>
     </div>
 
     <div class="content">
-        <div class="section-title">Global Tracks</div>
+        <div class="section-title" id="mainSectionTitle">Global Tracks</div>
         <div id="songList">
             <div style="text-align:center; color:#b3b3b3; margin-top:20px;">Memuat data...</div>
         </div>
@@ -259,13 +191,11 @@
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5zm0 12c4.42 0 8 3.58 8 8h-16c0-4.42 3.58-8 8-8z"/></svg>
             Profile
         </div>
-        
-        <div class="nav-item" onclick="bukaModalTugas()" style="cursor: pointer;">
+        <div class="nav-item" onclick="bukaModalUpload()" style="cursor: pointer;">
             <div class="nav-add-btn">
                 <svg viewBox="0 0 24 24"><path d="M19 11h-6v-6h-2v6h-6v2h6v6h2v-6h6v-2z"/></svg>
             </div>
         </div>
-        
         <div class="nav-item" onclick="window.location.href='/playlist'">
             <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg>
             Playlist
@@ -274,22 +204,28 @@
 
     <div class="modal" id="uploadModal">
         <div class="modal-content">
-            <div class="close-modal" onclick="tutupModalTugas()">&times;</div>
+            <div class="close-modal" onclick="tutupModalUpload()">&times;</div>
             <h3>Upload to AmplifySpot</h3>
-            
-            <div class="form-group">
-                <input type="text" id="songName" class="form-input" placeholder="Name Song" required>
-            </div>
-            <div class="form-group">
-                <input type="text" id="authorName" class="form-input" placeholder="Author" required>
-            </div>
+            <div class="form-group"><input type="text" id="songName" class="form-input" placeholder="Name Song" required></div>
+            <div class="form-group"><input type="text" id="authorName" class="form-input" placeholder="Author" required></div>
             <div class="form-group">
                 <label>Upload File (Must MP3)</label>
                 <input type="file" id="mp3File" class="file-input" accept=".mp3,audio/mpeg" required>
             </div>
-            
             <button class="upload-btn" id="uploadBtn" onclick="jalankanUpload()">Upload</button>
             <div id="uploadStatus" class="status-msg"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="addPlModal">
+        <div class="modal-content">
+            <div class="close-modal" onclick="tutupModalAddPl()">&times;</div>
+            <h3>Select Playlist</h3>
+            <p style="font-size:12px; color:#b3b3b3; text-align:center; margin-bottom:15px;">Pilih playlist untuk menyimpan lagu ini</p>
+            
+            <div id="myPlaylistsList">
+                <div style="text-align:center; color:#b3b3b3;">Memuat playlist...</div>
+            </div>
         </div>
     </div>
 
@@ -297,23 +233,14 @@
         <div class="modal-content">
             <div class="close-modal" onclick="tutupEditModal()">&times;</div>
             <h3 style="color: #ffae42;">Edit Song (Owner)</h3>
-            
             <input type="hidden" id="editSongId">
-
-            <div class="form-group">
-                <label>Edit Name Song</label>
-                <input type="text" id="editSongName" class="form-input" required>
-            </div>
-            <div class="form-group">
-                <label>Edit Author</label>
-                <input type="text" id="editAuthorName" class="form-input" required>
-            </div>
+            <div class="form-group"><label>Edit Name Song</label><input type="text" id="editSongName" class="form-input" required></div>
+            <div class="form-group"><label>Edit Author</label><input type="text" id="editAuthorName" class="form-input" required></div>
             <div class="form-group">
                 <label>Replace File MP3 (Optional)</label>
                 <input type="file" id="editMp3File" class="file-input" accept=".mp3,audio/mpeg">
                 <small style="color: #888; font-size: 11px;">Biarkan kosong jika tidak ingin mengganti lagu.</small>
             </div>
-            
             <button class="upload-btn" id="updateBtn" onclick="jalankanEdit()" style="background: #ffae42;">Save Changes</button>
             <button class="delete-btn" id="deleteBtn" onclick="jalankanHapus()">Remove Music</button>
             <div id="editStatus" class="status-msg"></div>
@@ -321,80 +248,108 @@
     </div>
 
     <script>
-        // 1. DAFTARKAN FUNGSI MODAL UPLOAD
-        window.bukaModalTugas = function() {
-            document.getElementById('uploadModal').classList.add('show');
-        };
-        window.tutupModalTugas = function() {
-            document.getElementById('uploadModal').classList.remove('show');
-            document.getElementById('uploadStatus').innerText = '';
-        };
-
-        // 1b. DAFTARKAN FUNGSI MODAL EDIT (KHUSUS OWNER)
-        window.bukaEditModal = function(id) {
-            // Cari data lagu berdasarkan ID
-            const song = window.allSongs.find(s => s.id == id);
-            if(song) {
-                document.getElementById('editSongId').value = song.id;
-                document.getElementById('editSongName').value = song.title;
-                document.getElementById('editAuthorName').value = song.artist;
-                document.getElementById('editMp3File').value = ''; // Reset file input
-                
-                document.getElementById('editModal').classList.add('show');
-            }
-        };
-        window.tutupEditModal = function() {
-            document.getElementById('editModal').classList.remove('show');
-            document.getElementById('editStatus').innerText = '';
-        };
-
-
-        window.playSong = function(url) {
-            if(url === '#') { alert("URL lagu tidak ditemukan di database."); return; }
-            const playerDiv = document.getElementById('globalPlayer');
-            const audio = document.getElementById('audioElement');
-            playerDiv.classList.add('active');
-            audio.src = url;
-            audio.play();
-        };
-
-        window.downloadSong = function(url) {
-            if(url === '#') return alert("File tidak tersedia.");
-            window.open(url, '_blank');
-        };
-
-        window.toggleFav = function(btn) {
-            btn.style.color = btn.style.color === 'rgb(29, 185, 84)' ? '#b3b3b3' : '#1db954';
-        };
-
-        window.addToPlaylist = function() {
-            alert('Fitur tambah ke playlist akan tersedia di halaman /playlist!');
-        };
-
-        // 2. INISIALISASI SUPABASE
+        // INISIALISASI SUPABASE & VARIABEL GLOBAL
         let clientSupabase = null;
-        window.allSongs = [];
-
         try {
             const SUPABASE_URL = 'https://vnuyqnandbsuibnbbbcg.supabase.co';
             const SUPABASE_KEY = 'sb_publishable_kV3A57UcwSynM2GufS_x4g_bsL4n--d';
+            if (window.supabase) clientSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) { console.error(e); }
+
+        window.allSongs = [];
+        window.allPublicPlaylists = [];
+        window.myPlaylists = [];
+        window.searchCategory = 'title'; // default
+        window.laguYangMauDitambah = null; // Menyimpan data lagu yg akan dimasukkan playlist
+
+        // ================== PENCARIAN & FILTER LOGIC ==================
+        window.setSearchCategory = async function(cat) {
+            window.searchCategory = cat;
             
-            if (window.supabase) {
-                clientSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            // Ubah tampilan tombol aktif
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('cat-' + cat).classList.add('active');
+            
+            // Ganti Judul
+            if(cat === 'playlist') {
+                document.getElementById('mainSectionTitle').innerText = 'Public Playlists';
+                if(window.allPublicPlaylists.length === 0) await fetchPublicPlaylists();
             } else {
-                console.warn("Library Supabase belum termuat.");
+                document.getElementById('mainSectionTitle').innerText = 'Global Tracks';
             }
-        } catch (errorInit) {
-            console.error("Gagal memulai Supabase:", errorInit);
+            
+            // Jalankan pencarian ulang
+            jalankanPencarian(document.getElementById('searchInput').value);
         }
 
-        // 3. FUNGSI RENDER & TAMPILKAN LAGU
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            jalankanPencarian(e.target.value);
+        });
+
+        window.jalankanPencarian = function(query) {
+            query = query.toLowerCase();
+            
+            if(window.searchCategory === 'playlist') {
+                const filtered = window.allPublicPlaylists.filter(pl => 
+                    pl.name.toLowerCase().includes(query) || 
+                    (pl.owner_username && pl.owner_username.toLowerCase().includes(query))
+                );
+                renderPublicPlaylists(filtered);
+            } else {
+                const filtered = window.allSongs.filter(song => {
+                    if(window.searchCategory === 'title') {
+                        return song.title.toLowerCase().includes(query);
+                    } else if(window.searchCategory === 'author') {
+                        return song.artist.toLowerCase().includes(query);
+                    }
+                    return false;
+                });
+                renderSongs(filtered);
+            }
+        }
+
+        // ================== DATA FETCHING ==================
+        window.fetchSongs = async function() {
+            if (!clientSupabase) return;
+            try {
+                const { data, error } = await clientSupabase.from('songs').select('*').order('id', { ascending: false });
+                if (error) throw error;
+                window.allSongs = data || [];
+                
+                // Pastikan yang dirender sesuai kategori saat ini (biasanya title)
+                if(window.searchCategory !== 'playlist') {
+                    renderSongs(window.allSongs);
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('songList').innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px;">Gagal memuat lagu.</div>`;
+            }
+        };
+
+        window.fetchPublicPlaylists = async function() {
+            if (!clientSupabase) return;
+            document.getElementById('songList').innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px;">Memuat Playlist Publik...</div>`;
+            try {
+                const { data, error } = await clientSupabase.from('playlists').select('*').eq('is_public', true).order('id', { ascending: false });
+                if (error) throw error;
+                window.allPublicPlaylists = data || [];
+                
+                // Render jika kategori saat ini memang playlist
+                if(window.searchCategory === 'playlist') {
+                    jalankanPencarian(document.getElementById('searchInput').value);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ================== RENDERING UI ==================
         window.renderSongs = function(songs) {
             const list = document.getElementById('songList');
             list.innerHTML = '';
 
             if(!songs || songs.length === 0) {
-                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
+                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No result</div>`;
                 return;
             }
 
@@ -408,13 +363,12 @@
                 const coverHTML = `<div class="song-cover"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg></div>`;
                 const audioUrl = song.file_url || '#';
 
-                // Cek jika user yang login adalah owner, maka tampilkan tombol edit
                 let editButtonHTML = '';
                 if(window.currentUserEmail === window.ownerEmail) {
                     editButtonHTML = `<button class="action-btn edit-btn" onclick="bukaEditModal('${song.id}')" title="Edit Song (Owner)">${editIcon}</button>`;
                 }
 
-                const html = `
+                list.innerHTML += `
                     <div class="song-item">
                         ${coverHTML}
                         <div class="song-info">
@@ -423,51 +377,173 @@
                         </div>
                         <div class="song-actions">
                             ${editButtonHTML}
-                            <button class="action-btn" onclick="addToPlaylist()" title="Add to Playlist">${addIcon}</button>
+                            <button class="action-btn" onclick="bukaModalAddToPlaylist('${song.id}')" title="Add to Playlist">${addIcon}</button>
                             <button class="action-btn" onclick="toggleFav(this)" title="Favorite">${favIcon}</button>
                             <button class="action-btn" onclick="downloadSong('${audioUrl}')" title="Download">${dlIcon}</button>
                             <button class="action-btn play-btn" onclick="playSong('${audioUrl}')" title="Play">${playIcon}</button>
                         </div>
                     </div>
                 `;
-                list.innerHTML += html;
             });
         };
 
-        // 4. FUNGSI AMBIL DATA (FETCH)
-        window.fetchSongs = async function() {
+        window.renderPublicPlaylists = function(playlists) {
             const list = document.getElementById('songList');
+            list.innerHTML = '';
             
-            if (!clientSupabase) {
-                list.innerHTML = `<div style="text-align:center; color:#ff4d4d; margin-top:20px; font-weight: 600;">Gagal koneksi ke Database.</div>`;
+            if(playlists.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px;">Tidak ada playlist publik ditemukan.</div>`;
                 return;
             }
-
-            try {
-                const { data, error } = await clientSupabase.from('songs').select('*').order('id', { ascending: false });
-                if (error) throw error;
+            
+            playlists.forEach(pl => {
+                const songCount = pl.songs ? pl.songs.length : 0;
+                const authorName = pl.owner_username || 'Unknown';
+                const saveIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>`;
                 
-                window.allSongs = data || [];
-                renderSongs(window.allSongs);
+                // Tampilkan tombol Save jika playlist bukan milik user saat ini
+                let saveBtnHtml = '';
+                if(pl.owner_email !== window.currentUserEmail) {
+                    saveBtnHtml = `<button class="save-pl-btn" onclick="savePlaylistOrang('${pl.id}')" title="Save Playlist">${saveIcon}</button>`;
+                }
+                
+                list.innerHTML += `
+                    <div class="playlist-card">
+                        <div class="pl-info">
+                            <div class="pl-name">${pl.name}</div>
+                            <div class="pl-meta"><span>${songCount} Songs</span> <span>• by ${authorName}</span></div>
+                        </div>
+                        <div>
+                            ${saveBtnHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        // ================== FITUR ADD TO PLAYLIST ==================
+        window.bukaModalAddToPlaylist = async function(songId) {
+            window.laguYangMauDitambah = window.allSongs.find(s => s.id == songId);
+            if(!window.laguYangMauDitambah) return;
+            
+            document.getElementById('addPlModal').classList.add('show');
+            const container = document.getElementById('myPlaylistsList');
+            container.innerHTML = '<div style="text-align:center; color:#b3b3b3;">Memuat playlist kamu...</div>';
+            
+            try {
+                const { data, error } = await clientSupabase.from('playlists').select('*').eq('owner_email', window.currentUserEmail).order('id', { ascending: false });
+                if(error) throw error;
+                
+                if(!data || data.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#b3b3b3; font-size:13px;">Kamu belum punya playlist.<br>Silakan buat di halaman Playlist!</div>';
+                    return;
+                }
+                
+                window.myPlaylists = data;
+                container.innerHTML = '';
+                data.forEach(pl => {
+                    const count = pl.songs ? pl.songs.length : 0;
+                    container.innerHTML += `
+                        <div class="my-pl-card" onclick="masukkanKePlaylist('${pl.id}')">
+                            <div class="my-pl-title">${pl.name}</div>
+                            <div class="my-pl-count">${count} Songs</div>
+                        </div>
+                    `;
+                });
             } catch (err) {
-                console.error("Fetch error:", err);
-                list.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px; font-weight: 600;">No song</div>`;
+                container.innerHTML = '<div style="text-align:center; color:#ff4d4d;">Gagal memuat playlist.</div>';
             }
         };
 
-        fetchSongs();
+        window.tutupModalAddPl = function() {
+            document.getElementById('addPlModal').classList.remove('show');
+        };
 
-        // 5. FITUR PENCARIAN
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const filtered = window.allSongs.filter(song => 
-                song.title.toLowerCase().includes(query) || 
-                song.artist.toLowerCase().includes(query)
-            );
-            renderSongs(filtered);
-        });
+        window.masukkanKePlaylist = async function(plId) {
+            const pl = window.myPlaylists.find(p => p.id == plId);
+            if(!pl || !window.laguYangMauDitambah) return;
+            
+            let currentSongs = pl.songs || [];
+            
+            // Cek duplikasi agar 1 playlist tidak ada lagu dobel
+            const isExist = currentSongs.find(s => s.id == window.laguYangMauDitambah.id);
+            if(isExist) {
+                alert('Lagu ini sudah ada di playlist tersebut!');
+                tutupModalAddPl();
+                return;
+            }
+            
+            currentSongs.push(window.laguYangMauDitambah);
+            
+            try {
+                const { error } = await clientSupabase.from('playlists').update({ songs: currentSongs }).eq('id', plId);
+                if(error) throw error;
+                
+                alert(`Berhasil ditambahkan ke ${pl.name}!`);
+                tutupModalAddPl();
+            } catch (err) {
+                alert('Gagal menambahkan lagu ke playlist.');
+            }
+        };
 
-        // 6. FUNGSI UPLOAD DATA
+        // ================== FITUR SAVE PUBLIC PLAYLIST ==================
+        window.savePlaylistOrang = async function(id) {
+            const plToCopy = window.allPublicPlaylists.find(p => p.id == id);
+            if(!plToCopy) return;
+            
+            const isConfirm = confirm(`Simpan playlist "${plToCopy.name}" ke akunmu?`);
+            if(!isConfirm) return;
+            
+            try {
+                // Cloning playlist (dibuat jadi private default saat disave)
+                const { error } = await clientSupabase.from('playlists').insert([
+                    { 
+                        name: plToCopy.name, 
+                        owner_email: window.currentUserEmail, 
+                        owner_username: window.currentUserName, 
+                        is_public: false, 
+                        songs: plToCopy.songs 
+                    }
+                ]);
+                if(error) throw error;
+                alert('Playlist berhasil disimpan! Silakan cek di menu Playlist.');
+            } catch(e) {
+                alert('Gagal menyimpan playlist.');
+            }
+        };
+
+        // ================== FUNGSI MODAL LAINNYA & PLAYER ==================
+        window.bukaModalUpload = () => { document.getElementById('uploadModal').classList.add('show'); };
+        window.tutupModalUpload = () => { document.getElementById('uploadModal').classList.remove('show'); document.getElementById('uploadStatus').innerText = ''; };
+        
+        window.bukaEditModal = (id) => {
+            const song = window.allSongs.find(s => s.id == id);
+            if(song) {
+                document.getElementById('editSongId').value = song.id;
+                document.getElementById('editSongName').value = song.title;
+                document.getElementById('editAuthorName').value = song.artist;
+                document.getElementById('editMp3File').value = ''; 
+                document.getElementById('editModal').classList.add('show');
+            }
+        };
+        window.tutupEditModal = () => { document.getElementById('editModal').classList.remove('show'); document.getElementById('editStatus').innerText = ''; };
+
+        window.playSong = (url) => {
+            if(url === '#') return;
+            const playerDiv = document.getElementById('globalPlayer');
+            const audio = document.getElementById('audioElement');
+            playerDiv.classList.add('active');
+            audio.src = url;
+            audio.play();
+        };
+
+        window.downloadSong = (url) => {
+            if(url === '#') return alert("File tidak tersedia.");
+            window.open(url, '_blank');
+        };
+        window.toggleFav = (btn) => { btn.style.color = btn.style.color === 'rgb(29, 185, 84)' ? '#b3b3b3' : '#1db954'; };
+
+        // ================== ACTION SUPABASE (UPLOAD, EDIT, HAPUS LAGU) ==================
         window.jalankanUpload = async function() {
             const title = document.getElementById('songName').value.trim();
             const artist = document.getElementById('authorName').value.trim();
@@ -477,43 +553,36 @@
             const uploadBtn = document.getElementById('uploadBtn');
 
             if(!clientSupabase) return;
-            if(!title || !artist || !mp3File) {
-                status.style.color = '#ff4d4d'; status.innerText = 'Nama, Author, dan File MP3 wajib diisi!'; return;
-            }
+            if(!title || !artist || !mp3File) { status.style.color = '#ff4d4d'; status.innerText = 'Wajib diisi semua!'; return; }
 
             uploadBtn.innerText = 'Uploading...'; uploadBtn.disabled = true;
-            status.style.color = '#a0a0a0'; status.innerText = 'Mengupload file ke server...';
+            status.style.color = '#a0a0a0'; status.innerText = 'Mengupload file...';
 
             try {
                 const cleanFileName = mp3File.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
                 const mp3Name = `${Date.now()}_${cleanFileName}`;
 
                 const { data: mp3Data, error: mp3Error } = await clientSupabase.storage.from('music').upload(mp3Name, mp3File);
-                if(mp3Error) throw new Error("Gagal upload MP3: " + mp3Error.message);
+                if(mp3Error) throw new Error(mp3Error.message);
                 
                 const mp3Url = clientSupabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
 
-                const { error: dbError } = await clientSupabase.from('songs').insert([
-                    { title: title, artist: artist, file_url: mp3Url }
-                ]);
-
-                if(dbError) throw new Error("Gagal simpan ke database: " + dbError.message);
+                const { error: dbError } = await clientSupabase.from('songs').insert([{ title: title, artist: artist, file_url: mp3Url }]);
+                if(dbError) throw new Error(dbError.message);
 
                 status.style.color = '#1db954'; status.innerText = 'Upload berhasil!';
-                
                 setTimeout(() => {
                     document.getElementById('songName').value = ''; document.getElementById('authorName').value = ''; document.getElementById('mp3File').value = '';
                     uploadBtn.innerText = 'Upload'; uploadBtn.disabled = false;
-                    tutupModalTugas(); fetchSongs(); 
+                    tutupModalUpload(); fetchSongs(); 
                 }, 1500);
 
             } catch (err) {
-                status.style.color = '#ff4d4d'; status.innerText = err.message || 'Terjadi kesalahan saat upload.';
+                status.style.color = '#ff4d4d'; status.innerText = err.message;
                 uploadBtn.innerText = 'Upload'; uploadBtn.disabled = false;
             }
         };
 
-        // 7. FUNGSI EDIT DATA (KHUSUS OWNER)
         window.jalankanEdit = async function() {
             const id = document.getElementById('editSongId').value;
             const newTitle = document.getElementById('editSongName').value.trim();
@@ -522,72 +591,59 @@
             const status = document.getElementById('editStatus');
             const updateBtn = document.getElementById('updateBtn');
 
-            if(!newTitle || !newArtist) {
-                status.style.color = '#ff4d4d'; status.innerText = 'Nama dan Author tidak boleh kosong!'; return;
-            }
+            if(!newTitle || !newArtist) { status.style.color = '#ff4d4d'; status.innerText = 'Data tidak lengkap!'; return; }
 
             updateBtn.innerText = 'Updating...'; updateBtn.disabled = true;
-            status.style.color = '#a0a0a0'; status.innerText = 'Menyimpan perubahan...';
+            status.style.color = '#a0a0a0'; status.innerText = 'Menyimpan...';
 
             try {
                 let updateData = { title: newTitle, artist: newArtist };
-
-                // Jika Owner mengupload file MP3 pengganti
                 if (newMp3File) {
                     status.innerText = 'Mengupload file baru...';
                     const cleanFileName = newMp3File.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
                     const mp3Name = `${Date.now()}_${cleanFileName}`;
 
                     const { error: mp3Error } = await clientSupabase.storage.from('music').upload(mp3Name, newMp3File);
-                    if(mp3Error) throw new Error("Gagal upload MP3 baru.");
+                    if(mp3Error) throw new Error("Gagal upload.");
                     
                     const mp3Url = clientSupabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
                     updateData.file_url = mp3Url;
                 }
 
                 const { error: dbError } = await clientSupabase.from('songs').update(updateData).eq('id', id);
-                if(dbError) throw new Error("Gagal update database.");
+                if(dbError) throw new Error("Gagal update.");
 
-                status.style.color = '#1db954'; status.innerText = 'Perubahan berhasil disimpan!';
-                
-                setTimeout(() => {
-                    updateBtn.innerText = 'Save Changes'; updateBtn.disabled = false;
-                    tutupEditModal(); fetchSongs(); 
-                }, 1500);
-
+                status.style.color = '#1db954'; status.innerText = 'Berhasil disimpan!';
+                setTimeout(() => { updateBtn.innerText = 'Save Changes'; updateBtn.disabled = false; tutupEditModal(); fetchSongs(); }, 1500);
             } catch (err) {
-                status.style.color = '#ff4d4d'; status.innerText = err.message || 'Gagal menyimpan perubahan.';
+                status.style.color = '#ff4d4d'; status.innerText = err.message;
                 updateBtn.innerText = 'Save Changes'; updateBtn.disabled = false;
             }
         };
 
-        // 8. FUNGSI HAPUS DATA (KHUSUS OWNER)
         window.jalankanHapus = async function() {
             const id = document.getElementById('editSongId').value;
             const status = document.getElementById('editStatus');
             const deleteBtn = document.getElementById('deleteBtn');
 
-            if(!confirm("Yakin ingin menghapus lagu ini secara permanen?")) return;
-
+            if(!confirm("Hapus lagu ini permanen?")) return;
             deleteBtn.innerText = 'Deleting...'; deleteBtn.disabled = true;
-            status.style.color = '#a0a0a0'; status.innerText = 'Menghapus lagu...';
 
             try {
-                const { error: dbError } = await clientSupabase.from('songs').delete().eq('id', id);
-                if(dbError) throw new Error("Gagal menghapus lagu.");
+                const { error } = await clientSupabase.from('songs').delete().eq('id', id);
+                if(error) throw new Error("Gagal hapus.");
 
-                status.style.color = '#1db954'; status.innerText = 'Lagu berhasil dihapus!';
-                
-                setTimeout(() => {
-                    deleteBtn.innerText = 'Remove Music'; deleteBtn.disabled = false;
-                    tutupEditModal(); fetchSongs(); 
-                }, 1500);
-
+                status.style.color = '#1db954'; status.innerText = 'Dihapus!';
+                setTimeout(() => { deleteBtn.innerText = 'Remove Music'; deleteBtn.disabled = false; tutupEditModal(); fetchSongs(); }, 1500);
             } catch (err) {
-                status.style.color = '#ff4d4d'; status.innerText = err.message || 'Gagal menghapus lagu.';
+                status.style.color = '#ff4d4d'; status.innerText = err.message;
                 deleteBtn.innerText = 'Remove Music'; deleteBtn.disabled = false;
             }
         };
+
+        // Panggil fetch lagu di awal
+        fetchSongs();
+
     </script>
 </body>
 </html>
