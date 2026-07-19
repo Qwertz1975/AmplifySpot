@@ -33,7 +33,6 @@
                 window.currentUserEmail = user.email;
                 window.currentUserName = user.displayName || "Unknown User";
                 
-                // Ambil semua data setelah login berhasil
                 if(window.fetchSongs) window.fetchSongs();
                 if(window.fetchMyPlaylists) window.fetchMyPlaylists();
             }
@@ -54,10 +53,7 @@
         .logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 15px; }
         .logo span { color: #1db954; }
         
-        .search-bar {
-            width: 100%; background: #242424; border-radius: 25px; padding: 12px 20px;
-            border: 1px solid transparent; color: white; font-size: 15px; outline: none; transition: 0.3s;
-        }
+        .search-bar { width: 100%; background: #242424; border-radius: 25px; padding: 12px 20px; border: 1px solid transparent; color: white; font-size: 15px; outline: none; transition: 0.3s; }
         .search-bar:focus { border-color: #1db954; background: #2a2a2a; }
 
         /* SEARCH CATEGORIES */
@@ -75,11 +71,11 @@
         /* ITEM STYLES (Songs) */
         .song-item { display: flex; align-items: center; padding: 10px; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; }
         .song-item:hover { background: #282828; }
-        .song-cover { width: 50px; height: 50px; border-radius: 4px; background: #282828; display: flex; align-items: center; justify-content: center; color: #b3b3b3; margin-right: 15px; }
+        .song-cover { width: 50px; height: 50px; border-radius: 4px; background: #282828; display: flex; align-items: center; justify-content: center; color: #b3b3b3; margin-right: 15px; flex-shrink: 0; }
         .song-info { flex: 1; overflow: hidden; }
         .song-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .song-author { font-size: 13px; color: #b3b3b3; margin-top: 3px; }
-        .song-actions { display: flex; gap: 12px; align-items: center; }
+        .song-actions { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
         .action-btn { background: none; border: none; color: #b3b3b3; cursor: pointer; transition: 0.2s; padding: 5px; }
         .action-btn:hover { color: #ffffff; transform: scale(1.1); }
         .play-btn { color: #1db954; }
@@ -130,9 +126,12 @@
         .form-input { width: 100%; padding: 12px; background: #242424; border: 1px solid transparent; border-radius: 6px; color: white; outline: none; }
         .form-input:focus { border-color: #1db954; }
         .file-input { width: 100%; padding: 10px; background: #242424; border-radius: 6px; color: #b3b3b3; font-size: 13px; }
+        
+        /* SEMUA TOMBOL AKSI SEKARANG PAKAI DESAIN INI */
         .upload-btn { width: 100%; padding: 14px; background: #1db954; color: black; border: none; border-radius: 25px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .upload-btn:hover { background: #1ed760; }
         .upload-btn:disabled { background: #555; cursor: not-allowed; }
+        
         .delete-btn { width: 100%; padding: 14px; background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; border-radius: 25px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 10px; }
         .status-msg { text-align: center; margin-top: 10px; font-size: 13px; line-height: 1.4; }
         .toggle-wrap { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 14px; color: #b3b3b3; }
@@ -271,7 +270,7 @@
             <h3>Create New Playlist</h3>
             <div class="form-group"><input type="text" id="createPlName" class="form-input" placeholder="Name Playlist" required></div>
             <div class="toggle-wrap"><input type="checkbox" id="createPlPublic"><label for="createPlPublic">Public Playlist</label></div>
-            <button class="submit-btn" id="btnCreatePl" onclick="buatPlaylist()">Create</button>
+            <button class="upload-btn" id="btnCreatePl" onclick="buatPlaylist()">Create</button>
             <div id="createPlStatus" class="status-msg"></div>
         </div>
     </div>
@@ -283,7 +282,7 @@
             <input type="hidden" id="editPlId">
             <div class="form-group"><input type="text" id="editPlName" class="form-input" required></div>
             <div class="toggle-wrap"><input type="checkbox" id="editPlPublic"><label for="editPlPublic">Public Playlist</label></div>
-            <button class="submit-btn" id="btnEditPl" onclick="simpanEditPlaylist()">Save Changes</button>
+            <button class="upload-btn" id="btnEditPl" onclick="simpanEditPlaylist()">Save Changes</button>
             <button class="delete-btn" id="btnDeletePl" onclick="hapusPlaylist()">Delete Playlist</button>
             <div id="editPlStatus" class="status-msg"></div>
         </div>
@@ -303,6 +302,8 @@
         window.myPlaylists = [];
         window.searchCategory = 'title'; 
         window.laguYangMauDitambah = null; 
+        
+        window.currentPlaylistId = null; // Menyimpan ID playlist yg sedang dibuka
         window.currentSongsInPlaylist = [];
         window.isAutoplayActive = false;
 
@@ -326,11 +327,10 @@
             document.getElementById('globalPlayer').classList.add('active');
             audioElement.src = url;
             audioElement.play();
-            // Jika memutar lagu saat berada di dalam view Playlist Detail, anggap playlist autoplay nyala
             if(document.getElementById('playlistDetailView').style.display === 'block') {
                 window.isAutoplayActive = true;
             } else {
-                window.isAutoplayActive = false; // Matikan jika play dari Global Tracks
+                window.isAutoplayActive = false; 
             }
         }
 
@@ -491,17 +491,48 @@
             });
         };
 
+        // FITUR BARU: Hapus lagu dari Playlist (Hanya di tampilan detail playlist)
+        window.hapusLaguDariPlaylist = async function(songId) {
+            if(!confirm("Hapus lagu ini dari playlist?")) return;
+            
+            // Hapus dari array lokal
+            window.currentSongsInPlaylist = window.currentSongsInPlaylist.filter(s => s.id != songId);
+            
+            try {
+                // Update ke database Supabase
+                const { error } = await clientSupabase.from('playlists').update({ songs: window.currentSongsInPlaylist }).eq('id', window.currentPlaylistId);
+                if(error) throw error;
+                
+                // Update jumlah lagu di UI Atas
+                document.getElementById('detailMeta').innerText = `${window.currentSongsInPlaylist.length} Songs`;
+                
+                // Render ulang daftar lagunya
+                renderPlaylistSongs();
+                
+                // Refresh data playlist di background agar angka di card My Playlists ikut update
+                fetchMyPlaylists(); 
+            } catch (err) {
+                alert("Gagal menghapus lagu dari playlist.");
+            }
+        };
+
         window.renderPlaylistSongs = function() {
             const container = document.getElementById('playlistSongsContainer');
             container.innerHTML = '';
             if(window.currentSongsInPlaylist.length === 0) { container.innerHTML = `<div style="text-align:center; color:#b3b3b3; margin-top:20px;">Belum ada lagu.</div>`; return; }
 
             window.currentSongsInPlaylist.forEach(song => {
+                const trashIcon = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+                const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+
                 container.innerHTML += `
                     <div class="song-item">
                         <div class="song-cover"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4v-10h4v-4h-6z"/></svg></div>
                         <div class="song-info"><div class="song-title">${song.title}</div><div class="song-author">${song.artist}</div></div>
-                        <button class="play-btn" onclick="playSong('${song.file_url}')"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+                        <div class="song-actions">
+                            <button class="action-btn" style="color:#ff4d4d;" onclick="hapusLaguDariPlaylist('${song.id}')" title="Hapus dari Playlist">${trashIcon}</button>
+                            <button class="action-btn play-btn" onclick="playSong('${song.file_url}')">${playIcon}</button>
+                        </div>
                     </div>`;
             });
         };
@@ -510,6 +541,9 @@
         window.bukaPlaylistDetail = function(id) {
             const pl = window.myPlaylists.find(p => p.id == id);
             if(!pl) return;
+            
+            window.currentPlaylistId = id; // Simpan ID playlist yang dibuka
+            
             document.getElementById('playlistListView').style.display = 'none';
             document.getElementById('playlistDetailView').style.display = 'block';
             document.getElementById('detailTitle').innerText = pl.name;
@@ -521,6 +555,7 @@
         window.kembaliKeDaftarPl = function() {
             document.getElementById('playlistDetailView').style.display = 'none';
             document.getElementById('playlistListView').style.display = 'block';
+            window.currentPlaylistId = null;
         };
 
         // ================== MODAL & SUPABASE ACTIONS (PLAYLIST) ==================
@@ -552,7 +587,8 @@
                 if(error) throw error;
                 document.getElementById('createPlName').value = ''; document.getElementById('createPlPublic').checked = false;
                 tutupModalCreatePl(); fetchMyPlaylists();
-            } catch (err) { status.style.color = '#ff4d4d'; status.innerText = 'Gagal: ' + err.message; btn.disabled = false; }
+            } catch (err) { status.style.color = '#ff4d4d'; status.innerText = 'Gagal: ' + err.message; }
+            btn.disabled = false;
         };
 
         window.simpanEditPlaylist = async function() {
@@ -566,8 +602,9 @@
             try {
                 const { error } = await clientSupabase.from('playlists').update({ name: name, is_public: isPublic }).eq('id', id);
                 if(error) throw error;
-                tutupModalEditPl(); fetchMyPlaylists(); btn.disabled = false;
-            } catch (err) { status.style.color = '#ff4d4d'; status.innerText = 'Gagal: ' + err.message; btn.disabled = false; }
+                tutupModalEditPl(); fetchMyPlaylists(); 
+            } catch (err) { status.style.color = '#ff4d4d'; status.innerText = 'Gagal: ' + err.message; }
+            btn.disabled = false;
         };
 
         window.hapusPlaylist = async function() {
