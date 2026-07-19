@@ -167,7 +167,7 @@
             cursor: pointer; margin-top: 10px; transition: 0.2s;
         }
         .upload-btn:hover { background: #1ed760; }
-        #uploadStatus { text-align: center; margin-top: 10px; font-size: 13px; }
+        #uploadStatus { text-align: center; margin-top: 10px; font-size: 13px; line-height: 1.4; }
 
         /* GLOBAL AUDIO PLAYER (Hidden until played) */
         #globalPlayer {
@@ -266,11 +266,11 @@
             const { data, error } = await supabase.from('songs').select('*').order('id', { ascending: false });
             
             if (error) {
-                list.innerHTML = `<div style="text-align:center; color:#ff4d4d;">Gagal memuat lagu.</div>`;
+                list.innerHTML = `<div style="text-align:center; color:#ff4d4d;">Gagal memuat lagu. Cek Console atau pastikan RLS tabel dimatikan.</div>`;
                 return;
             }
             
-            allSongs = data;
+            allSongs = data || [];
             renderSongs(allSongs);
         }
 
@@ -330,7 +330,8 @@
         async function uploadSong() {
             const title = document.getElementById('songName').value;
             const artist = document.getElementById('authorName').value;
-            const mp3File = document.getElementById('mp3File').files[0];
+            const mp3Input = document.getElementById('mp3File');
+            const mp3File = mp3Input.files[0];
             const status = document.getElementById('uploadStatus');
 
             if(!title || !artist || !mp3File) {
@@ -343,20 +344,30 @@
             status.innerText = 'Mengupload file... Mohon tunggu.';
 
             try {
-                let mp3Url = '';
+                // 1. Bersihkan nama file dari spasi dan karakter aneh agar tidak ditolak server
+                const cleanFileName = mp3File.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+                const mp3Name = `${Date.now()}_${cleanFileName}`;
 
-                // 1. Upload MP3 ke bucket 'music'
-                const mp3Name = `${Date.now()}_${mp3File.name}`;
+                // 2. Upload MP3 ke bucket 'music'
                 const { data: mp3Data, error: mp3Error } = await supabase.storage.from('music').upload(mp3Name, mp3File);
-                if(mp3Error) throw new Error("Gagal upload MP3. Pastikan bucket 'music' ada.");
-                mp3Url = supabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
+                
+                if(mp3Error) {
+                    console.error("Storage Error:", mp3Error);
+                    throw new Error("Gagal upload MP3: " + mp3Error.message);
+                }
+                
+                // Dapatkan link publik setelah sukses masuk Storage
+                const mp3Url = supabase.storage.from('music').getPublicUrl(mp3Name).data.publicUrl;
 
-                // 2. Simpan ke tabel 'songs'
+                // 3. Simpan ke tabel 'songs' Database
                 const { error: dbError } = await supabase.from('songs').insert([
                     { title: title, artist: artist, file_url: mp3Url }
                 ]);
 
-                if(dbError) throw dbError;
+                if(dbError) {
+                    console.error("Database Error:", dbError);
+                    throw new Error("Gagal simpan ke database: " + dbError.message);
+                }
 
                 status.style.color = '#1db954';
                 status.innerText = 'Upload berhasil!';
@@ -371,7 +382,7 @@
                 }, 1500);
 
             } catch (err) {
-                console.error(err);
+                console.error("Upload Error Detail:", err);
                 status.style.color = '#ff4d4d';
                 status.innerText = err.message || 'Terjadi kesalahan saat upload.';
             }
